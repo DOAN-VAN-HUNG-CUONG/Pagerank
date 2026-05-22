@@ -11,9 +11,12 @@ ITERS  ?= 20
 
 .DEFAULT_GOAL := help
 
+IMAGE ?= pagerank:latest
+
 .PHONY: help install install-dev test lint format \
         run-core run-mrjob run-spark run-streaming \
-        benchmark figures gen-graph java-build clean
+        benchmark figures gen-graph java-build \
+        docker-build docker-test docker-run clean
 
 help:                ## Show this help
 	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | \
@@ -60,6 +63,15 @@ figures:             ## Generate convergence / comparison / graph figures
 
 java-build:          ## Build the Java MapReduce jar (requires Maven + Hadoop)
 	cd java && mvn -q clean package
+
+docker-build:        ## Build the Docker image (IMAGE=pagerank:latest)
+	docker build -t $(IMAGE) .
+
+docker-test:         ## Run the test suite inside the Docker image
+	docker run --rm $(IMAGE) pytest -m "not spark" -q
+
+docker-run:          ## Run the reference engine inside the Docker image
+	docker run --rm $(IMAGE) python -m core.cli data/graph.txt --iterations $(ITERS)
 
 clean:               ## Remove generated artifacts
 	rm -rf output/*_rdd output/*_df output/pagerank_spark output/init_state.txt \

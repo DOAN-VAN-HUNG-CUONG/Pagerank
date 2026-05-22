@@ -74,8 +74,10 @@ pagerank/
 ├── requirements.txt           # tooling dependencies
 ├── requirements-dev.txt       # test/framework dependencies
 ├── pyproject.toml             # packaging + pytest/ruff config
+├── Dockerfile                 # reproducible container (Python 3.11)
+├── .dockerignore
 ├── Makefile                   # make help
-└── .github/workflows/ci.yml   # CI: ruff + pytest
+└── .github/workflows/ci.yml   # CI: ruff + pytest + docker build
 ```
 
 ---
@@ -104,6 +106,23 @@ Node       PageRank
 4          0.14811060
 2          0.11174670
 ```
+
+---
+
+## 4.1 Docker (reproducible run)
+
+A `Dockerfile` (Python 3.11, so every Python implementation including mrjob works)
+is provided for a reproducible environment:
+
+```bash
+docker build -t pagerank .              # or: make docker-build
+docker run --rm pagerank                # runs the test suite (skips the Spark test)
+docker run --rm pagerank python -m core.cli data/graph.txt --iterations 20
+```
+
+PySpark is omitted from the image to keep it small (it normally runs on a cluster);
+see the comment in the `Dockerfile` to enable it. The CI pipeline builds this image
+and runs the tests inside it on every push.
 
 ---
 

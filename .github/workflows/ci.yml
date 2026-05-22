@@ -39,3 +39,18 @@ jobs:
 
       - name: Run slow tests
         run: pytest -v -m slow
+
+  docker:
+    name: Docker build + test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Build image
+        run: docker build -t pagerank:ci .
+
+      - name: Run the test suite inside the container
+        run: docker run --rm pagerank:ci pytest -m "not spark" -q
+
+      - name: Smoke-test the reference engine in the container
+        run: docker run --rm pagerank:ci python -m core.cli data/graph.txt --iterations 20

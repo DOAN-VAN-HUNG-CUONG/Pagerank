@@ -1,0 +1,36 @@
+# Keep the Docker build context small and reproducible.
+.git
+.github
+.venv
+venv
+env
+
+# Python / tooling caches
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+
+# Generated outputs and runtime artifacts
+output/_bench_tmp/
+output/pagerank_spark/
+output/*_rdd/
+output/*_df/
+spark-warehouse/
+metastore_db/
+*.log
+
+# Java build artifacts
+java/target/
+*.class
+
+# OS / editor noise
+.DS_Store
+*.swp
+.idea/
+.vscode/
+
+# Docs images are not needed to build/run the code
+docs/figures/
