@@ -1,0 +1,8 @@
+# Runtime dependencies for the reference engine, tooling and visualization.
+# NOTE: the pure-Python PageRank core (python/core/pagerank_core.py) has NO
+# mandatory third-party dependency. The packages below are required only by the
+# validation tooling (NetworkX ground-truth), benchmarking and plotting scripts.
+
+networkx>=3.0      # ground-truth PageRank for validation and graph generation
+numpy>=1.23        # numerical helpers used by benchmarking
+matplotlib>=3.6    # convergence / comparison / graph figures

@@ -1,0 +1,57 @@
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "pagerank-bigdata"
+version = "2.0.0"
+description = "PageRank on the Hadoop ecosystem — Python, PySpark, Hadoop Streaming, Java MapReduce and Apache Pig, with a verified pure-Python reference engine."
+readme = "README.md"
+requires-python = ">=3.8"
+license = { text = "MIT" }
+authors = [{ name = "pagerank-bigdata contributors" }]
+keywords = ["pagerank", "mapreduce", "hadoop", "pyspark", "pig", "big-data"]
+dependencies = []   # the reference engine is dependency-free
+
+[project.optional-dependencies]
+tools = ["networkx>=3.0", "numpy>=1.23", "matplotlib>=3.6"]
+spark = ["pyspark>=3.4"]
+mrjob = ["mrjob>=0.7"]
+dev = ["pytest>=7.0", "ruff>=0.4", "networkx>=3.0", "numpy>=1.23", "matplotlib>=3.6", "pyspark>=3.4", "mrjob>=0.7"]
+
+[project.scripts]
+pagerank = "core.cli:main"
+
+[tool.setuptools]
+package-dir = { "" = "python" }
+
+[tool.setuptools.packages.find]
+where = ["python"]
+include = ["core*"]
+
+# ---------------------------------------------------------------------------
+# pytest
+# ---------------------------------------------------------------------------
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+python_files = ["test_*.py"]
+addopts = "-ra -q"
+markers = [
+    "spark: tests that require a working PySpark installation",
+    "mrjob: tests that require the mrjob package",
+    "slow: long-running tests (large synthetic graphs)",
+]
+
+# ---------------------------------------------------------------------------
+# ruff (PEP 8 lint + format)
+# ---------------------------------------------------------------------------
+[tool.ruff]
+line-length = 100
+target-version = "py38"
+
+[tool.ruff.lint]
+# E/F/W = pycodestyle + pyflakes (PEP 8), I = import order, B = bugbear.
+# "UP" (pyupgrade) is deliberately excluded: the codebase keeps explicit
+# typing.Dict/List/Optional for broad interpreter compatibility.
+select = ["E", "F", "W", "I", "B"]
+ignore = ["E741"]   # allow short loop variables (e.g. `N`) common in math code

@@ -1,0 +1,10 @@
+# Development / testing / framework dependencies.
+# Install with:  pip install -r requirements-dev.txt
+-r requirements.txt
+
+pytest>=7.0        # unit / cross-implementation tests
+networkx>=3.0      # already in requirements.txt; listed for clarity
+scipy>=1.10        # NetworkX PageRank backend (ground-truth in tests)
+pyspark>=3.4       # PySpark RDD + DataFrame implementation (needs Java 8/11/17)
+mrjob>=0.7         # mrjob local + Hadoop streaming implementation
+ruff>=0.4          # linter / formatter (PEP 8)

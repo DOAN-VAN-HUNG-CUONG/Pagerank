@@ -1,0 +1,46 @@
+# ---- Python ----
+__pycache__/
+*.py[cod]
+*.egg-info/
+.eggs/
+build/
+dist/
+.venv/
+venv/
+env/
+
+# ---- Testing / coverage / linters ----
+.pytest_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+.tox/
+
+# ---- Benchmark scratch ----
+output/_bench_tmp/
+
+# ---- Spark / Hadoop / mrjob local runtime artifacts ----
+metastore_db/
+derby.log
+spark-warehouse/
+*.log
+
+# ---- Java / Maven ----
+java/target/
+*.class
+
+# ---- Project outputs (generated, not source) ----
+output/*_rdd/
+output/*_df/
+output/pagerank_spark/
+output/init_state.txt
+
+# ---- OS / editor noise ----
+.DS_Store
+*.swp
+.idea/
+.vscode/
+
+# ---- Personal AI-assistant config (not part of the project) ----
+# Remove this line if you DO want to track project conventions in the repo.
+CLAUDE.md
