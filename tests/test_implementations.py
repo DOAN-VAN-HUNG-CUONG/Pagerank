@@ -32,22 +32,47 @@ def _converged(graph_path, epsilon=1e-10, max_iter=300):
     return pagerank(read_edges(graph_path), damping=0.85, epsilon=epsilon, max_iter=max_iter)
 
 
+def _mrjob_runnable():
+    """Whether the mrjob script can actually run on this interpreter.
+
+    mrjob 0.7.x imports ``distutils``, which Python 3.12 removed from the stdlib,
+    so a bare ``import mrjob`` can succeed while the modules the script really
+    uses fail to import. Check those modules directly.
+    """
+    import importlib
+    # mrjob.util holds the ``from distutils.spawn import ...`` that breaks on 3.12.
+    for mod in ("mrjob.util", "mrjob.job", "mrjob.step", "mrjob.protocol"):
+        try:
+            importlib.import_module(mod)
+        except Exception:
+            return False
+    return True
+
+
+requires_mrjob = pytest.mark.skipif(
+    not _mrjob_runnable(),
+    reason="mrjob is not runnable here (e.g. Python 3.12 removed distutils)",
+)
+
+
 def _run_mrjob_cli(graph_path, out, engine):
     """Invoke the mrjob script exactly as a user would (real entry point)."""
     script = os.path.join(PROJECT_ROOT, "python", "mrjob", "pagerank_mrjob.py")
-    subprocess.run(
+    proc = subprocess.run(
         [sys.executable, script, graph_path, "--iterations", "100",
          "--engine", engine, "--output", str(out)],
-        check=True, cwd=PROJECT_ROOT, capture_output=True,
+        cwd=PROJECT_ROOT, capture_output=True, text=True,
     )
+    if proc.returncode != 0:
+        pytest.fail("mrjob script failed:\n" + (proc.stderr or proc.stdout)[-2500:])
 
 
 # ---------------------------------------------------------------------------
 # mrjob
 # ---------------------------------------------------------------------------
 @pytest.mark.mrjob
+@requires_mrjob
 def test_mrjob_core_engine_matches_reference(graph_path, tmp_path):
-    pytest.importorskip("mrjob")
     out = tmp_path / "core.txt"
     _run_mrjob_cli(graph_path, out, engine="core")
     ranks = load_ranks(out)
@@ -57,8 +82,8 @@ def test_mrjob_core_engine_matches_reference(graph_path, tmp_path):
 
 
 @pytest.mark.mrjob
+@requires_mrjob
 def test_mrjob_mapreduce_engine_matches_reference(graph_path, tmp_path):
-    pytest.importorskip("mrjob")
     out = tmp_path / "mr.txt"
     _run_mrjob_cli(graph_path, out, engine="mrjob")
     ranks = load_ranks(out)
