@@ -1,0 +1,10 @@
+framework,label,n_nodes,n_edges,time_s,peak_mem_mb,iterations,max_diff_vs_core,status
+core,Core (Python),1000,3386,0.1203,13.4,30,4.998291261893058e-09,ok
+mrjob_core,mrjob (core),1000,3386,0.2131,24.5,30,4.998291261893058e-09,ok
+streaming,Hadoop Streaming,1000,3386,1.5738,9.6,30,1.8068236878453908e-08,ok
+core,Core (Python),5000,17015,0.6699,18.4,30,4.997182076558332e-09,ok
+mrjob_core,mrjob (core),5000,17015,1.0466,29.2,30,4.997182076558332e-09,ok
+streaming,Hadoop Streaming,5000,17015,3.4109,11.6,30,2.334047817563814e-08,ok
+core,Core (Python),10000,33989,0.8692,24.6,30,4.997706211980896e-09,ok
+mrjob_core,mrjob (core),10000,33989,1.1387,35.5,30,4.997706211980896e-09,ok
+streaming,Hadoop Streaming,10000,33989,7.5614,13.9,30,2.4006975158025537e-08,ok

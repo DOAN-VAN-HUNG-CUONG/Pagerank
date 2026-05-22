@@ -43,7 +43,7 @@ def _compute_contribs(kv):
     return [(nb, share) for nb in neighbors]
 
 
-def pagerank_rdd(spark, input_path, iterations, output_path):
+def pagerank_rdd(spark, input_path, iterations, output_path, epsilon=EPSILON):
     """Classic RDD-based PageRank.
 
     Educational and close to the raw MapReduce logic, but numerically complete:
@@ -113,7 +113,7 @@ def pagerank_rdd(spark, input_path, iterations, output_path):
 
         ranks = new_ranks
         print(f"  Iteration {iteration:2d} | delta = {delta:.6f}")
-        if delta < EPSILON:
+        if delta < epsilon:
             print(f"  Converged after {iteration} iterations.")
             break
 
@@ -130,7 +130,7 @@ def pagerank_rdd(spark, input_path, iterations, output_path):
 # DATAFRAME-BASED IMPLEMENTATION
 # =============================================================================
 
-def pagerank_dataframe(spark, input_path, iterations, output_path):
+def pagerank_dataframe(spark, input_path, iterations, output_path, epsilon=EPSILON):
     """DataFrame-based PageRank.
 
     More scalable and Catalyst-optimised. Implements the same full recurrence as
@@ -211,7 +211,7 @@ def pagerank_dataframe(spark, input_path, iterations, output_path):
 
         ranks_df = new_ranks
         print(f"  Iteration {iteration:2d} | delta = {delta:.6f}")
-        if delta < EPSILON:
+        if delta < epsilon:
             print(f"  Converged after {iteration} iterations.")
             break
 
@@ -256,6 +256,8 @@ def main():
     parser.add_argument("--output", default="output/pagerank_spark",
                         help="Output path prefix")
     parser.add_argument("--iterations", type=int, default=MAX_ITER)
+    parser.add_argument("--epsilon", type=float, default=EPSILON,
+                        help="L1 convergence threshold (pass 0 for a fixed iteration count)")
     parser.add_argument("--mode", choices=["rdd", "df", "both"], default="both",
                         help="Execution mode: rdd, df, or both")
     args = parser.parse_args()
@@ -272,10 +274,12 @@ def main():
         os.makedirs(args.output, exist_ok=True)
 
     if args.mode in ("rdd", "both"):
-        pagerank_rdd(spark, input_uri, args.iterations, output_uri + "/result")
+        pagerank_rdd(spark, input_uri, args.iterations, output_uri + "/result",
+                     epsilon=args.epsilon)
 
     if args.mode in ("df", "both"):
-        pagerank_dataframe(spark, input_uri, args.iterations, output_uri + "/result")
+        pagerank_dataframe(spark, input_uri, args.iterations, output_uri + "/result",
+                           epsilon=args.epsilon)
 
     spark.stop()
 

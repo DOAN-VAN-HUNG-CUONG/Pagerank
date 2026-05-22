@@ -109,11 +109,11 @@ class PageRankIteration(MRJob):
 # =============================================================================
 # Engine 1 — pure-Python reference (exact)
 # =============================================================================
-def run_pagerank_local(input_file, iterations, output_file):
+def run_pagerank_local(input_file, iterations, output_file, epsilon=EPSILON):
     """Run PageRank with the verified reference engine and write sorted output."""
     print(f"[PageRank mrjob/core] Reading graph from: {input_file}")
     edges = read_edges(input_file)
-    result = pagerank(edges, damping=DAMPING, epsilon=EPSILON, max_iter=iterations)
+    result = pagerank(edges, damping=DAMPING, epsilon=epsilon, max_iter=iterations)
 
     print(f"[PageRank mrjob/core] Nodes: {result.num_nodes}, Damping: {DAMPING}, "
           f"Max iter: {iterations}")
@@ -129,7 +129,7 @@ def run_pagerank_local(input_file, iterations, output_file):
 # =============================================================================
 # Engine 2 — iterative MapReduce via mrjob
 # =============================================================================
-def run_with_mrjob(input_file, iterations, output_file, runner="inline"):
+def run_with_mrjob(input_file, iterations, output_file, runner="inline", epsilon=EPSILON):
     """Drive PageRankIteration once per iteration through an mrjob runner.
 
     State is kept as JSON lines "node\\t[rank, neighbors]" and streamed through
@@ -165,7 +165,7 @@ def run_with_mrjob(input_file, iterations, output_file, runner="inline"):
         adjacency = adjacency_out
         state_lines = _encode_state(adjacency, ranks)
         print(f"  Iteration {iteration:2d} | delta = {delta:.6f}")
-        if delta < EPSILON:
+        if delta < epsilon:
             print(f"  Converged after {iteration} iterations.")
             break
 
@@ -231,9 +231,13 @@ if __name__ == "__main__":
         parser.add_argument("--runner", choices=["inline", "local", "hadoop"],
                             default="inline",
                             help="mrjob runner for --engine mrjob")
+        parser.add_argument("--epsilon", type=float, default=EPSILON,
+                            help=f"L1 convergence threshold (default: {EPSILON}; "
+                                 "pass 0 to run a fixed iteration count)")
         args = parser.parse_args()
 
         if args.engine == "core":
-            run_pagerank_local(args.input, args.iterations, args.output)
+            run_pagerank_local(args.input, args.iterations, args.output, epsilon=args.epsilon)
         else:
-            run_with_mrjob(args.input, args.iterations, args.output, runner=args.runner)
+            run_with_mrjob(args.input, args.iterations, args.output,
+                           runner=args.runner, epsilon=args.epsilon)
