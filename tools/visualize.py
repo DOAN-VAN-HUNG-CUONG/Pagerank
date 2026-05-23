@@ -72,7 +72,8 @@ def plot_runtime_scaling(by_fw, outdir):
         xs = [r["n_nodes"] for r in rows]
         ys = [r["time_s"] for r in rows]
         ax.plot(xs, ys, marker="o", markersize=3, label=label)
-    ax.set_xscale("log"); ax.set_yscale("log")
+    ax.set_xscale("log")
+    ax.set_yscale("log")
     ax.set_xlabel("Number of nodes")
     ax.set_ylabel("Wall-clock time (s)")
     ax.set_title("Runtime scaling")
