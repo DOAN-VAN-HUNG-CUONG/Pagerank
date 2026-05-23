@@ -273,16 +273,19 @@ classic time--memory trade-off between in-memory and streaming execution.
 
 \begin{table}[t]
 \centering
-\caption{Single-node wall-clock time (s) and peak memory (MB), 30 iterations,
-Barab\'asi--Albert graphs. Measured in the CI container.}
+\caption{Single-node performance, 30 iterations, Barab\'asi--Albert graphs.
+Each cell is \emph{wall-clock time (s)\,/\,peak memory (MB)}. Measured in the
+CI container.}
 \label{tab:perf}
+\setlength{\tabcolsep}{4pt}
+\small
 \begin{tabular}{@{}lrrr@{}}
 \toprule
  & $N{=}10^3$ & $N{=}5\!\times\!10^3$ & $N{=}10^4$ \\
 \midrule
-Core (Python)    & 0.12\,s / 13.4 & 0.67\,s / 18.4 & 0.87\,s / 24.6 \\
-mrjob (core)     & 0.21\,s / 24.5 & 1.05\,s / 29.2 & 1.14\,s / 35.5 \\
-Hadoop Streaming & 1.57\,s / \phantom{0}9.6 & 3.41\,s / 11.6 & 7.56\,s / 13.9 \\
+Core (Python)    & 0.12 / 13.4 & 0.67 / 18.4 & 0.87 / 24.6 \\
+mrjob (core)     & 0.21 / 24.5 & 1.05 / 29.2 & 1.14 / 35.5 \\
+Hadoop Streaming & 1.57 / \phantom{0}9.6 & 3.41 / 11.6 & 7.56 / 13.9 \\
 \bottomrule
 \end{tabular}
 \end{table}
