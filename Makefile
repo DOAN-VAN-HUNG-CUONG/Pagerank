@@ -16,7 +16,7 @@ IMAGE ?= pagerank:latest
 
 .PHONY: help install install-dev test lint format \
         run-core run-mrjob run-spark run-streaming \
-        benchmark figures gen-graph java-build \
+        benchmark benchmark-full figures gen-graph java-build \
         paper paper-preview \
         docker-build docker-test docker-run clean
 
@@ -57,11 +57,15 @@ gen-graph:           ## Generate a synthetic scale-free graph (NODES=, OUT=)
 	$(PYTHON) tools/generate_graph.py --nodes $(or $(NODES),1000) \
 	    --output $(or $(OUT),data/graph_large.txt)
 
-benchmark:           ## Benchmark implementations and write a JSON report
-	$(PYTHON) tools/benchmark.py --input $(INPUT) --iterations $(ITERS)
+benchmark:           ## Quick benchmark (small sizes, 3 runs) -> output/benchmark_results.csv
+	$(PYTHON) tools/benchmark.py --generate --sizes 1000 5000 10000 \
+	    --repeat 3 --iterations $(ITERS)
 
-figures:             ## Generate convergence / comparison / graph figures
-	$(PYTHON) tools/visualize.py --input $(INPUT) --iterations $(ITERS)
+benchmark-full:      ## Full benchmark incl. PySpark (one command), then regenerate figures
+	bash scripts/run_full_benchmark.sh
+
+figures:             ## Regenerate the IEEE figures from the benchmark CSV
+	$(PYTHON) tools/visualize.py --csv output/benchmark_results.csv --input $(INPUT)
 
 java-build:          ## Build the Java MapReduce jar (requires Maven + Hadoop)
 	cd java && mvn -q clean package

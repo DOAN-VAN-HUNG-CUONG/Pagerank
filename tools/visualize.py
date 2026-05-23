@@ -55,7 +55,9 @@ def _load_csv(path):
             try:
                 row["n_nodes"] = int(row["n_nodes"])
                 row["time_s"] = float(row["time_s"])
+                row["time_s_std"] = float(row.get("time_s_std") or 0.0)
                 row["peak_mem_mb"] = float(row["peak_mem_mb"]) if row["peak_mem_mb"] else None
+                row["peak_mem_mb_std"] = float(row.get("peak_mem_mb_std") or 0.0)
                 row["max_diff_vs_core"] = (float(row["max_diff_vs_core"])
                                            if row["max_diff_vs_core"] not in ("", "0") else 0.0)
             except (ValueError, KeyError):
@@ -71,7 +73,9 @@ def plot_runtime_scaling(by_fw, outdir):
     for label, rows in sorted(by_fw.items()):
         xs = [r["n_nodes"] for r in rows]
         ys = [r["time_s"] for r in rows]
-        ax.plot(xs, ys, marker="o", markersize=3, label=label)
+        es = [r.get("time_s_std", 0.0) for r in rows]
+        ax.errorbar(xs, ys, yerr=es, marker="o", markersize=3, capsize=2,
+                    elinewidth=0.8, label=label)
     ax.set_xscale("log")
     ax.set_yscale("log")
     ax.set_xlabel("Number of nodes")
@@ -85,10 +89,12 @@ def plot_memory_scaling(by_fw, outdir):
     fig, ax = plt.subplots(figsize=FIGSIZE)
     plotted = False
     for label, rows in sorted(by_fw.items()):
-        pts = [(r["n_nodes"], r["peak_mem_mb"]) for r in rows if r["peak_mem_mb"]]
+        pts = [(r["n_nodes"], r["peak_mem_mb"], r.get("peak_mem_mb_std", 0.0))
+               for r in rows if r["peak_mem_mb"]]
         if pts:
-            ax.plot([p[0] for p in pts], [p[1] for p in pts],
-                    marker="s", markersize=3, label=label)
+            ax.errorbar([p[0] for p in pts], [p[1] for p in pts],
+                        yerr=[p[2] for p in pts], marker="s", markersize=3,
+                        capsize=2, elinewidth=0.8, label=label)
             plotted = True
     ax.set_xscale("log")
     ax.set_xlabel("Number of nodes")

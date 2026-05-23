@@ -1,0 +1,31 @@
+cff-version: 1.2.0
+message: "If you use this work, please cite both the software and the paper below."
+title: "PageRank Across the Hadoop Ecosystem — Reproducible Comparative Study (code)"
+type: software
+authors:
+  - family-names: "Doan"
+    given-names: "Van Hung Cuong"
+    email: "cuongdvh25msa13245@fpt.edu.vn"
+    affiliation: "FPT University"
+    # orcid: "https://orcid.org/0000-0000-0000-0000"  # điền sau khi tạo ORCID iD
+repository-code: "https://github.com/DOAN-VAN-HUNG-CUONG/Pagerank"
+license: MIT
+keywords:
+  - PageRank
+  - MapReduce
+  - Apache Spark
+  - Apache Pig
+  - Hadoop
+  - reproducibility
+  - graph processing
+  - benchmarking
+preferred-citation:
+  type: article
+  title: "A Reproducible Comparative Study of PageRank Across the Hadoop Ecosystem"
+  authors:
+    - family-names: "Doan"
+      given-names: "Van Hung Cuong"
+      email: "cuongdvh25msa13245@fpt.edu.vn"
+      affiliation: "FPT University"
+  year: 2026
+  # doi: "10.5281/zenodo.XXXXXXX"   # điền sau khi xuất bản trên Zenodo

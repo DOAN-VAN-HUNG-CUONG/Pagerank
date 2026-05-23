@@ -188,19 +188,22 @@ spark-submit --master 'local[*]' python/pyspark/pagerank_spark.py \
 ## 6. Tools
 
 ```bash
-# Generate a scale-free graph
-python tools/generate_graph.py --nodes 1000 --m 2 --output data/graph_large.txt
+# Generate a scale-free graph (Barabási–Albert, m=3)
+python tools/generate_graph.py --nodes 1000 --m 3 --output data/graph_1000.txt
 
-# Benchmark + cross-check (writes a JSON report)
-python tools/benchmark.py --input data/graph.txt --iterations 50
+# Comparative benchmark across all available frameworks, repeating each run 3x
+# (mean ± std), writing output/benchmark_results.csv. Missing runtimes auto-skip.
+python tools/benchmark.py --generate --sizes 1000 5000 10000 50000 \
+    --frameworks core mrjob_core mrjob_mapreduce streaming --repeat 3 --iterations 30
 
-# Generate figures into docs/figures/
-python tools/visualize.py --input data/graph.txt --iterations 50
+# Regenerate the IEEE figures (vector PDF) into docs/figures/
+python tools/visualize.py --csv output/benchmark_results.csv --input data/graph.txt
 ```
 
-Figures (see `docs/figures/`): convergence curve (`convergence.png`), top-N
-(`top_ranks.png`), graph with node size ∝ PageRank (`graph.png`), runtime comparison
-(`runtime.png`).
+Figures (`docs/figures/`, vector PDF): `runtime_scaling.pdf`, `memory_scaling.pdf`,
+`speedup.pdf`, `accuracy.pdf`, `convergence.pdf`, `top_ranks.pdf`. The scaling and
+memory plots show standard-deviation error bars; the same files feed the paper
+(`paper/figures/`).
 
 ---
 

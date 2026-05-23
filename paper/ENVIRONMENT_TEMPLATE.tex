@@ -1,0 +1,27 @@
+% =============================================================================
+% Environment paragraph TEMPLATE (fill-in-the-blanks).
+%
+% After running  `bash scripts/run_full_benchmark.sh`  (or `make benchmark-full`)
+% on your VM, the script prints the machine spec. Replace the [BRACKETED] fields
+% below with those values, then paste this paragraph over the existing
+% "\textbf{Environment.}" paragraph in content.tex.
+%
+% Also remember to update, with the new VM numbers:
+%   - the slowdown ranges in abstract.tex (mrjob / Streaming / PySpark),
+%   - Table~\ref{tab:perf} (add PySpark RDD/DataFrame rows; the harness CSV now
+%     contains them), and the Results narrative,
+%   - Section "Limitations": move PySpark out of "not yet measured" once timed.
+% =============================================================================
+
+\textbf{Environment.} All measurements reported here were taken on a single
+[MACHINE, e.g.\ 8-core OrbStack VM] running [OS, e.g.\ Ubuntu~22.04], x86-64,
+CPython~[3.\textit{xx}], with [RAM] GiB of RAM and Apache Spark~[X.Y.Z] in
+\texttt{local[*]} mode. To quantify run-to-run variation, every
+(framework, size) configuration was executed [N] times and we report the mean
+and sample standard deviation. The harness (\texttt{tools/benchmark.py}) is
+configuration-driven (\texttt{tools/config.py}): it auto-skips any framework
+whose runtime is absent, so the \emph{same} command produces single-node numbers
+on a laptop and cluster-scale numbers on a big-data box. Each framework---now
+including the PySpark RDD and DataFrame engines---is invoked through its real
+entry point, writing results incrementally to CSV, and all numbers reported here
+are measured, not estimated.

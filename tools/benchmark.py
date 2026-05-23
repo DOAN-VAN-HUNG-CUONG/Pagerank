@@ -26,6 +26,7 @@ import importlib.util
 import os
 import re
 import shutil
+import statistics
 import subprocess
 import sys
 import tempfile
@@ -39,7 +40,8 @@ from core import pagerank, read_edges  # noqa: E402
 
 CSV_FIELDS = [
     "framework", "label", "n_nodes", "n_edges",
-    "time_s", "peak_mem_mb", "iterations", "max_diff_vs_core", "status",
+    "time_s", "time_s_std", "peak_mem_mb", "peak_mem_mb_std", "n_runs",
+    "iterations", "max_diff_vs_core", "status",
 ]
 
 
@@ -185,6 +187,10 @@ def main():
     parser.add_argument("--sizes", type=int, nargs="*", help="Node counts (default: config)")
     parser.add_argument("--frameworks", nargs="*", help="Frameworks (default: all available)")
     parser.add_argument("--iterations", type=int, default=config.DEFAULT_ITERATIONS)
+    parser.add_argument("--repeat", type=int, default=1,
+                        help="Number of timed runs per (framework, size). When >1, "
+                             "time_s/peak_mem_mb hold the mean and the *_std columns "
+                             "hold the sample standard deviation.")
     parser.add_argument("--epsilon", type=float, default=0.0,
                         help="Convergence threshold passed to every framework. "
                              "Default 0 = run a fixed iteration count so all "
@@ -197,6 +203,7 @@ def main():
     sizes = args.sizes if args.sizes else config.GRAPH_SIZES
     frameworks = args.frameworks if args.frameworks else config.DEFAULT_FRAMEWORKS
     iters = args.iterations
+    repeat = max(1, args.repeat)
 
     runnable = [f for f in frameworks if _available(f)]
     skipped = [f for f in frameworks if not _available(f)]
@@ -208,7 +215,20 @@ def main():
     tmp_dir = os.path.join(config.OUTPUT_DIR, "_bench_tmp")
     os.makedirs(tmp_dir, exist_ok=True)
 
-    rows = []
+    # Stream rows to disk as they are produced so a long run that is interrupted
+    # still leaves the completed measurements on disk.
+    out_fh = open(args.output, "w", newline="", encoding="utf-8")
+    writer = csv.DictWriter(out_fh, fieldnames=CSV_FIELDS)
+    writer.writeheader()
+    out_fh.flush()
+    n_written = 0
+
+    def emit(row):
+        nonlocal n_written
+        writer.writerow(row)
+        out_fh.flush()
+        n_written += 1
+
     for n in sizes:
         graph = config.graph_path_for(n)
         if not os.path.isfile(graph):
@@ -241,32 +261,48 @@ def main():
             label = config.FRAMEWORKS[fw]["label"]
             cmd, env_extra, reader, ref_kind = _spec(
                 fw, graph_abs, os.path.join(tmp_dir, f"n{n}"), iters, args.epsilon)
-            proc, elapsed, peak_mb = _timed_run(cmd, env_extra)
-            if proc.returncode != 0:
-                tail = (proc.stderr or proc.stdout).strip().splitlines()[-1:] or [""]
-                print(f"  {label:<20} ERROR ({tail[0][:60]})")
-                rows.append(dict(framework=fw, label=label, n_nodes=n, n_edges=n_edges,
-                                 time_s="", peak_mem_mb="", iterations="",
-                                 max_diff_vs_core="", status="error"))
+
+            # Repeat the timed run; the last successful run's output is used for
+            # the (deterministic) accuracy and iteration metrics.
+            times, mems, last_proc, error_tail = [], [], None, None
+            for _ in range(repeat):
+                last_proc, elapsed, peak_mb = _timed_run(cmd, env_extra)
+                if last_proc.returncode != 0:
+                    src = last_proc.stderr or last_proc.stdout
+                    error_tail = (src.strip().splitlines()[-1:] or [""])[0]
+                    break
+                times.append(elapsed)
+                if peak_mb is not None:
+                    mems.append(peak_mb)
+
+            if error_tail is not None:
+                print(f"  {label:<20} ERROR ({error_tail[:60]})")
+                emit(dict(framework=fw, label=label, n_nodes=n, n_edges=n_edges,
+                          status="error"))
                 continue
+
             ranks = reader()
             diff = _max_diff(ranks, ref[ref_kind])
-            iters_done = _parse_iterations(proc.stdout, iters)
-            diff_str = "0" if diff == 0 else (f"{diff:.2e}" if diff is not None else "n/a")
-            mem_str = f"{peak_mb}" if peak_mb is not None else "n/a"
-            print(f"  {label:<20} {elapsed:>8.3f}s  {mem_str:>8} MB  "
-                  f"iters={iters_done}  maxΔ={diff_str}")
-            rows.append(dict(framework=fw, label=label, n_nodes=n, n_edges=n_edges,
-                             time_s=elapsed, peak_mem_mb=peak_mb if peak_mb is not None else "",
-                             iterations=iters_done,
-                             max_diff_vs_core=diff if diff is not None else "",
-                             status="ok"))
+            iters_done = _parse_iterations(last_proc.stdout, iters)
+            time_mean = round(statistics.mean(times), 4)
+            time_std = round(statistics.stdev(times), 4) if len(times) > 1 else 0.0
+            mem_mean = round(statistics.mean(mems), 1) if mems else ""
+            mem_std = round(statistics.stdev(mems), 1) if len(mems) > 1 else (0.0 if mems else "")
 
-    with open(args.output, "w", newline="", encoding="utf-8") as fh:
-        writer = csv.DictWriter(fh, fieldnames=CSV_FIELDS)
-        writer.writeheader()
-        writer.writerows(rows)
-    print(f"\nWrote {len(rows)} rows to {args.output}")
+            diff_str = "0" if diff == 0 else (f"{diff:.2e}" if diff is not None else "n/a")
+            mem_disp = f"{mem_mean}" if mems else "n/a"
+            spread = f" ±{time_std:.3f}" if len(times) > 1 else ""
+            print(f"  {label:<20} {time_mean:>8.3f}s{spread}  {mem_disp:>8} MB  "
+                  f"iters={iters_done}  maxΔ={diff_str}  (n={len(times)})")
+            emit(dict(framework=fw, label=label, n_nodes=n, n_edges=n_edges,
+                      time_s=time_mean, time_s_std=time_std,
+                      peak_mem_mb=mem_mean, peak_mem_mb_std=mem_std,
+                      n_runs=len(times), iterations=iters_done,
+                      max_diff_vs_core=diff if diff is not None else "",
+                      status="ok"))
+
+    out_fh.close()
+    print(f"\nWrote {n_written} rows to {args.output}")
     if skipped:
         print(f"Note: {', '.join(skipped)} were skipped (runtime not installed); "
               f"run on a cluster to add those rows.")
