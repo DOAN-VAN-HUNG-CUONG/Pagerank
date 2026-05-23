@@ -1,0 +1,43 @@
+%% =====================================================================
+%% Local preview build: standard "article" class, no IEEEtran required.
+%% Compile with:  pdflatex preview && pdflatex preview
+%% This exists so the paper can be proofread on machines without the IEEEtran
+%% class (e.g. a minimal TeX Live). It \input's the SAME content.tex and
+%% abstract.tex as the submission build (main.tex); only the layout differs.
+%% =====================================================================
+\documentclass[twocolumn]{article}
+
+\usepackage{cite}
+\usepackage{amsmath,amssymb,amsfonts}
+\usepackage{graphicx}
+\usepackage{booktabs}
+\usepackage{textcomp}
+\usepackage{xcolor}
+\usepackage{url}
+\usepackage[margin=0.75in]{geometry}
+
+% --- Stubs for the IEEEtran-specific commands used by the shared body ---
+\newcommand{\IEEEoverridecommandlockouts}{}
+\newcommand{\IEEEauthorblockN}[1]{{\normalsize #1}\par}
+\newcommand{\IEEEauthorblockA}[1]{{\small #1}\par}
+\newenvironment{IEEEkeywords}{\par\medskip\noindent\textbf{Index Terms---}\,}{\par\medskip}
+
+\begin{document}
+
+\title{A Reproducible Comparative Study of PageRank\\ Across the Hadoop Ecosystem}
+\author{Cuong V. H. Doan\\ \textit{Independent Researcher}\\ doanvanhungcuong@gmail.com}
+\date{}
+\maketitle
+
+\begin{abstract}
+\input{abstract}
+\end{abstract}
+
+\begin{IEEEkeywords}
+PageRank, MapReduce, Apache Spark, Apache Pig, Hadoop, reproducibility,
+graph processing, benchmarking.
+\end{IEEEkeywords}
+
+\input{content}
+
+\end{document}

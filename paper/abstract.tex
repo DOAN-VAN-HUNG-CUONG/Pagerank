@@ -1,0 +1,23 @@
+% Shared abstract, \input by both main.tex (IEEEtran) and preview.tex (article).
+PageRank is a canonical workload for evaluating large-scale graph-processing
+systems, yet implementations written for different frameworks are rarely checked
+for \emph{numerical equivalence} before their performance is compared. We present
+a reproducible, single-codebase study that pairs a dependency-free pure-Python
+\emph{reference engine} with five Hadoop-ecosystem implementations of PageRank:
+Python \texttt{mrjob} (a local engine and a genuine single-pass MapReduce job),
+PySpark (RDD and DataFrame), Hadoop Streaming, Java MapReduce, and Apache Pig.
+The reference engine implements the standard, weighted, and personalized variants
+with correct dangling-node handling and matches \texttt{networkx.pagerank} to a
+maximum per-node error of $2.6\times10^{-12}$; every executable distributed
+implementation agrees with it to within $2.4\times10^{-8}$, i.e.\ up to the
+eight-decimal output precision, so any timing difference reflects engineering
+overhead rather than a different computation. A single configuration-driven
+harness measures wall-clock time, peak memory, and accuracy on synthetic
+Barab\'asi--Albert graphs. On a single node and at moderate scale the in-memory
+engine is fastest, \texttt{mrjob} adds a $1.3\times$--$1.8\times$ overhead, and
+the process-per-iteration Hadoop Streaming pipeline is $5\times$--$13\times$
+slower while using the least memory. We analyze the architectural causes of these
+differences, document a self-normalization property, a single-pass dangling-mass
+limitation, and a Spark lineage-growth pitfall, and release the full toolchain so
+that cluster-scale evaluation of the remaining frameworks is a single command.
+The study argues for a discipline of \emph{validate first, then compare}.

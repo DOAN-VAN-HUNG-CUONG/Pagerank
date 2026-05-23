@@ -238,7 +238,36 @@ graph. See `docs/METHODOLOGY.md` for details and remediation.
 
 ---
 
-## 9. References
+## 9. Paper
+
+`paper/` contains an IEEE-format comparative study, *"A Reproducible Comparative Study
+of PageRank Across the Hadoop Ecosystem,"* written from the **measured** results in this
+repository. It establishes numerical equivalence between implementations first (the
+validate-first discipline of Section 7), then compares wall-clock time, peak memory, and
+convergence. The reference engine, the mrjob `core`/MapReduce engine, and Hadoop Streaming
+are reported from real benchmark runs; PySpark, Java MapReduce, and Pig are analysed
+architecturally and scoped explicitly as future work — no fabricated numbers.
+
+| File | Role |
+|---|---|
+| `paper/main.tex` | Submission build (`\documentclass[conference]{IEEEtran}`) — needs `IEEEtran.cls` |
+| `paper/preview.tex` | Proofreading build (`article` class + IEEEtran stubs) — compiles anywhere |
+| `paper/content.tex` | Shared body: methodology, results, discussion, bibliography |
+| `paper/abstract.tex` | Shared abstract (input by both builds) |
+| `paper/figures/` | The five figures from `tools/visualize.py` (PDF) |
+| `paper/preview.pdf` | Pre-compiled article-class preview |
+
+```bash
+make paper           # build paper/main.pdf (requires a TeX install with IEEEtran.cls)
+make paper-preview   # build paper/preview.pdf (no IEEEtran.cls required)
+```
+
+Both targets use `latexmk` when available and fall back to two `pdflatex` passes (the
+bibliography is embedded via `\thebibliography`, so no BibTeX step is needed).
+
+---
+
+## 10. References
 
 - S. Brin and L. Page, "The anatomy of a large-scale hypertextual web search engine,"
   *Computer Networks and ISDN Systems*, vol. 30, no. 1–7, pp. 107–117, 1998.

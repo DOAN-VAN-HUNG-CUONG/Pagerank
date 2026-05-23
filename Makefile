@@ -4,10 +4,11 @@
 # Usage:  make help
 # -----------------------------------------------------------------------------
 
-PYTHON ?= python3
-PIP    ?= pip3
-INPUT  ?= data/graph.txt
-ITERS  ?= 20
+PYTHON    ?= python3
+PIP       ?= pip3
+INPUT     ?= data/graph.txt
+ITERS     ?= 20
+PAPER_DIR ?= paper
 
 .DEFAULT_GOAL := help
 
@@ -16,6 +17,7 @@ IMAGE ?= pagerank:latest
 .PHONY: help install install-dev test lint format \
         run-core run-mrjob run-spark run-streaming \
         benchmark figures gen-graph java-build \
+        paper paper-preview \
         docker-build docker-test docker-run clean
 
 help:                ## Show this help
@@ -64,6 +66,14 @@ figures:             ## Generate convergence / comparison / graph figures
 java-build:          ## Build the Java MapReduce jar (requires Maven + Hadoop)
 	cd java && mvn -q clean package
 
+paper:               ## Build the IEEE submission PDF (paper/main.pdf; needs IEEEtran.cls)
+	cd $(PAPER_DIR) && latexmk -pdf -interaction=nonstopmode main.tex || \
+	    (pdflatex -interaction=nonstopmode main.tex && pdflatex -interaction=nonstopmode main.tex)
+
+paper-preview:       ## Build the article-class preview PDF (no IEEEtran.cls required)
+	cd $(PAPER_DIR) && latexmk -pdf -interaction=nonstopmode preview.tex || \
+	    (pdflatex -interaction=nonstopmode preview.tex && pdflatex -interaction=nonstopmode preview.tex)
+
 docker-build:        ## Build the Docker image (IMAGE=pagerank:latest)
 	docker build -t $(IMAGE) .
 
@@ -73,8 +83,10 @@ docker-test:         ## Run the test suite inside the Docker image
 docker-run:          ## Run the reference engine inside the Docker image
 	docker run --rm $(IMAGE) python -m core.cli data/graph.txt --iterations $(ITERS)
 
-clean:               ## Remove generated artifacts
+clean:               ## Remove generated artifacts (keeps committed paper PDFs)
 	rm -rf output/*_rdd output/*_df output/pagerank_spark output/init_state.txt \
 	       metastore_db derby.log spark-warehouse .pytest_cache \
 	       java/target docs/figures/*.png
+	rm -f $(PAPER_DIR)/*.aux $(PAPER_DIR)/*.log $(PAPER_DIR)/*.out \
+	      $(PAPER_DIR)/*.fls $(PAPER_DIR)/*.fdb_latexmk $(PAPER_DIR)/*.bbl $(PAPER_DIR)/*.blg
 	find . -type d -name __pycache__ -prune -exec rm -rf {} + 2>/dev/null || true
