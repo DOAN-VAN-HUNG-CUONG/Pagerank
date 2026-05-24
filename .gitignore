@@ -35,6 +35,9 @@ output/*_df/
 output/pagerank_spark/
 output/init_state.txt
 
+# ---- Large generated graph (4 MB, regenerable via tools/generate_graph.py) ----
+data/graph_50000.txt
+
 # ---- OS / editor noise ----
 .DS_Store
 *.swp
