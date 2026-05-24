@@ -225,3 +225,64 @@ Sau khi push `CITATION.cff`, GitHub hiển thị nút **"Cite this repository"**
 
 > Lưu ý: tài liệu này là hướng dẫn quy trình, không phải tư vấn pháp lý. Quy trình arXiv/Zenodo có thể
 > thay đổi — hãy kiểm tra trang trợ giúp chính thức trước khi nộp.
+
+---
+
+## Phụ lục B: Zenodo chi tiết + metadata sẵn dùng
+
+Hai DOI nên lấy: một cho **mã nguồn** (qua GitHub release), một cho **bài PDF** (preprint).
+
+### B.0. Chuẩn bị
+1. Tạo **ORCID** miễn phí tại <https://orcid.org/register> (đăng ký bằng email FPT) → lấy ID `0000-000X-XXXX-XXXX`.
+2. Build `paper/main.pdf` trên VM: `make paper`.
+3. Điền ORCID vào dòng comment trong `CITATION.cff`.
+
+### B.1. DOI cho mã nguồn (GitHub → Zenodo)
+1. <https://zenodo.org> → **Log in with GitHub** → **Authorize zenodo**.
+2. Menu hồ sơ → **GitHub** → tìm repo **`Pagerank`** → gạt **On** (phải bật TRƯỚC khi tạo release).
+3. GitHub → tab **Releases** → **Draft a new release**: tag `v1.0.0` (Create new tag on publish), title `v1.0.0`,
+   đính kèm `paper/main.pdf` → **Publish release**.
+4. Sau ~1 phút, Zenodo tự lưu bản ghi repo và cấp **DOI cho code** (`10.5281/zenodo.XXXXXXX`). Edit metadata nếu cần → **Publish**.
+
+### B.2. DOI cho bài PDF (Preprint) — metadata copy-paste
+Zenodo → **New upload** → kéo thả `paper/main.pdf`. (Tùy chọn: **Reserve DOI** để dán vào `\thanks{}` rồi build lại trước khi upload bản cuối.)
+
+- **Resource type:** Publication → Preprint
+- **Title:**
+  `A Reproducible Comparative Study of PageRank Across the Hadoop Ecosystem`
+- **Authors:** `Doan, Van Hung Cuong | FPT University | <ORCID của bạn>`
+- **License:** Creative Commons Attribution 4.0 International (CC-BY-4.0)
+- **Language:** English
+- **Keywords:** PageRank; MapReduce; Apache Spark; Apache Pig; Hadoop; reproducibility; graph processing; benchmarking
+- **Related works** (tùy chọn): `is supplemented by` → URL repo GitHub và/hoặc DOI code (B.1)
+- **Description / Abstract:**
+
+> PageRank is a canonical workload for evaluating large-scale graph-processing systems, yet implementations
+> written for different frameworks are rarely checked for numerical equivalence before their performance is
+> compared. We present a reproducible, single-codebase study that pairs a dependency-free pure-Python reference
+> engine with five Hadoop-ecosystem implementations of PageRank: Python mrjob (a local engine and a genuine
+> single-pass MapReduce job), PySpark (RDD and DataFrame), Hadoop Streaming, Java MapReduce, and Apache Pig.
+> The reference engine implements the standard, weighted, and personalized variants with correct dangling-node
+> handling and matches networkx.pagerank to a maximum per-node error of 2.6e-12; every executed distributed
+> implementation agrees with it to within 2.4e-8 (up to eight-decimal output precision), so any timing
+> difference reflects engineering overhead rather than a different computation. A single configuration-driven
+> harness measures wall-clock time, peak memory, and accuracy on synthetic Barabasi-Albert graphs, repeating
+> each configuration three times. On a single multi-core node the two in-memory engines are fastest and scale
+> near-linearly; the mrjob local engine adds only a 1.0-1.8x constant, the process-per-iteration Hadoop
+> Streaming pipeline is 6-13x slower while using the least memory (~10 MB), the genuine single-pass mrjob
+> MapReduce job is 36-82x slower, and PySpark's DataFrame engine is 190-1000x slower with a ~1.6 GB JVM
+> footprint (its RDD counterpart slower still, ~59 s/iteration, dominated by per-iteration localCheckpoint).
+> We analyze the architectural causes, document a self-normalization property, a single-pass dangling-mass
+> limitation, and a Spark lineage-growth pitfall, and release the full toolchain so that cluster-scale
+> evaluation of the remaining JVM frameworks is a single command. The study argues for a discipline of
+> "validate first, then compare".
+
+Bấm **Save** → kiểm tra → **Publish**. DOI cấp ngay; trang public xem PDF online được.
+
+### B.3. Hoàn thiện
+- DOI badge vào `README.md`:
+  `[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.XXXXXXX.svg)](https://doi.org/10.5281/zenodo.XXXXXXX)`
+- `CITATION.cff`: bỏ comment dòng `doi:` trong `preferred-citation`, điền DOI bài.
+
+> DOI Zenodo là **vĩnh viễn**: đảm bảo PDF đã đúng (tên *Doan Van Hung Cuong*, FPT University, bảng 5 framework)
+> trước khi Publish. Bản đã publish chỉ sửa được metadata; đổi file phải tạo version mới (giữ chung concept DOI).
