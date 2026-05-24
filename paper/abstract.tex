@@ -13,16 +13,18 @@ implementation that we execute agrees with it to within $2.4\times10^{-8}$, i.e.
 up to the eight-decimal output precision, so any timing difference reflects
 engineering overhead rather than a different computation. A single
 configuration-driven harness measures wall-clock time, peak memory, and accuracy
-on synthetic Barab\'asi--Albert graphs of up to $5\times10^{4}$ nodes, repeating
-each configuration three times and reporting the mean and standard deviation. The
-two in-memory engines are fastest and scale near-linearly; the \texttt{mrjob}
-local engine's overhead shrinks from $1.7\times$ to $\approx\!1\times$ as the
-graph grows, the process-per-iteration Hadoop Streaming pipeline is
-$8\times$--$14\times$ slower while using the least memory, and the genuine
-single-pass \texttt{mrjob} MapReduce job is $44\times$--$49\times$ slower because
-it launches a fresh job every iteration. We analyze the architectural causes of
-these differences, document a self-normalization property, a single-pass
-dangling-mass limitation, and a Spark lineage-growth pitfall, and release the full
-toolchain so that cluster-scale evaluation of the remaining frameworks (PySpark,
-Java, Pig) is a single command. The study argues for a discipline of
-\emph{validate first, then compare}.
+on synthetic Barab\'asi--Albert graphs, repeating each configuration three times
+and reporting the mean and standard deviation. On a single multi-core node the two
+in-memory engines are fastest and scale near-linearly; the \texttt{mrjob} local
+engine adds only a $1.0\times$--$1.8\times$ constant, the process-per-iteration
+Hadoop Streaming pipeline is $6\times$--$13\times$ slower while using the least
+memory ($\sim\!10$\,MB), the genuine single-pass \texttt{mrjob} MapReduce job is
+$36\times$--$82\times$ slower because it launches a fresh job every iteration, and
+PySpark's DataFrame engine is $190\times$--$1000\times$ slower with a
+$\sim\!1.6$\,GB JVM footprint---its RDD counterpart is slower still
+($\sim\!59$\,s/iteration), its per-iteration \texttt{localCheckpoint} dominating
+runtime. We analyze the architectural causes of these differences, document a
+self-normalization property, a single-pass dangling-mass limitation, and a Spark
+lineage-growth pitfall, and release the full toolchain so that cluster-scale
+evaluation of the remaining JVM frameworks (Java MapReduce, Apache Pig) is a single
+command. The study argues for a discipline of \emph{validate first, then compare}.

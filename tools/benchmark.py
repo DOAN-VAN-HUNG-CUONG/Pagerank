@@ -124,6 +124,24 @@ def _parse_iterations(stdout, max_iter):
     return int(m.group(1)) if m else max_iter
 
 
+def _error_summary(proc):
+    """Pick the most informative line from a failed subprocess.
+
+    Verbose runtimes (notably Spark) print warnings -- e.g. the JDK incubator
+    notice ``Using incubator modules: jdk.incubator.vector`` -- as the *last*
+    line, which masks the real cause. Prefer lines that look like errors; fall
+    back to the last non-empty line.
+    """
+    combined = ((proc.stdout or "") + "\n" + (proc.stderr or "")).splitlines()
+    keys = ("Error", "Exception", "Traceback", "Caused by", "AnalysisException",
+            "py4j", "ERROR", "No such", "not found", "raise ")
+    hits = [ln.strip() for ln in combined if ln.strip() and any(k in ln for k in keys)]
+    if hits:
+        return hits[-1]
+    nonempty = [ln.strip() for ln in combined if ln.strip()]
+    return nonempty[-1] if nonempty else "(no output)"
+
+
 # ---------------------------------------------------------------------------
 # Framework command specs
 # ---------------------------------------------------------------------------
@@ -259,24 +277,34 @@ def main():
 
         for fw in runnable:
             label = config.FRAMEWORKS[fw]["label"]
+            out_prefix = os.path.join(tmp_dir, f"n{n}")
             cmd, env_extra, reader, ref_kind = _spec(
-                fw, graph_abs, os.path.join(tmp_dir, f"n{n}"), iters, args.epsilon)
+                fw, graph_abs, out_prefix, iters, args.epsilon)
 
             # Repeat the timed run; the last successful run's output is used for
             # the (deterministic) accuracy and iteration metrics.
             times, mems, last_proc, error_tail = [], [], None, None
             for _ in range(repeat):
+                # Spark's saveAsTextFile refuses a pre-existing output directory,
+                # so the 2nd+ repeat would crash; clear it before each PySpark run.
+                if fw.startswith("pyspark"):
+                    shutil.rmtree(out_prefix + "_spark", ignore_errors=True)
                 last_proc, elapsed, peak_mb = _timed_run(cmd, env_extra)
                 if last_proc.returncode != 0:
-                    src = last_proc.stderr or last_proc.stdout
-                    error_tail = (src.strip().splitlines()[-1:] or [""])[0]
+                    error_tail = _error_summary(last_proc)
+                    # Persist the full output so the real cause can be inspected.
+                    log_path = os.path.join(tmp_dir, f"error_{fw}_n{n}.log")
+                    with open(log_path, "w", encoding="utf-8") as lf:
+                        lf.write((last_proc.stdout or "")
+                                 + "\n----- STDERR -----\n" + (last_proc.stderr or ""))
                     break
                 times.append(elapsed)
                 if peak_mb is not None:
                     mems.append(peak_mb)
 
             if error_tail is not None:
-                print(f"  {label:<20} ERROR ({error_tail[:60]})")
+                print(f"  {label:<20} ERROR ({error_tail[:80]})")
+                print(f"  {'':<20} full log: {os.path.relpath(log_path, config.PROJECT_ROOT)}")
                 emit(dict(framework=fw, label=label, n_nodes=n, n_edges=n_edges,
                           status="error"))
                 continue

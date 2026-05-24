@@ -281,3 +281,14 @@ bibliography is embedded via `\thebibliography`, so no BibTeX step is needed).
 - Apache Hadoop MapReduce Tutorial — https://hadoop.apache.org/docs/stable/hadoop-mapreduce-client/hadoop-mapreduce-client-core/MapReduceTutorial.html
 - PySpark RDD Programming Guide — https://spark.apache.org/docs/latest/rdd-programming-guide.html
 - Apache Pig Latin Reference — https://pig.apache.org/docs/latest/basic.html
+
+---
+
+## 11. License
+
+- **Code** (the implementations, tools, and tests): MIT License — see [`LICENSE`](LICENSE).
+- **Paper and figures** (`paper/`): Creative Commons Attribution 4.0 International
+  (CC BY 4.0).
+
+To cite this work, see [`CITATION.cff`](CITATION.cff); GitHub renders a
+"Cite this repository" button from it.

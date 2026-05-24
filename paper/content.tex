@@ -175,10 +175,9 @@ Apache Pig         & Pig Latin dataflow           & Pig, Hadoop       & Dropped 
 \textbf{Datasets.} Performance is measured on synthetic directed graphs drawn
 from the Barab\'asi--Albert preferential-attachment model~\cite{barabasi1999}
 ($m=3$, fixed seed), whose power-law degree distribution mimics real web and
-social graphs; we report node counts
-$N\in\{10^3,5\!\times\!10^3,10^4,5\!\times\!10^4\}$ (up to $1.7\times10^5$ edges).
-Correctness is additionally checked on a 10-node didactic graph and on a small
-graph that deliberately contains dangling nodes.
+social graphs; we report node counts $N\in\{10^3,5\!\times\!10^3,10^4\}$ (up to
+$\sim\!3.4\times10^4$ edges). Correctness is additionally checked on a 10-node
+didactic graph and on a small graph that deliberately contains dangling nodes.
 
 \textbf{Ground truth.} The independent oracle is \texttt{networkx.pagerank}
 (SciPy backend) run to a tight tolerance ($\text{tol}=10^{-12}$). Cross-framework
@@ -191,11 +190,12 @@ $\max_u|PR(u)-PR_{\text{ref}}(u)|$; (ii) the $L_1$ delta per iteration; (iii)
 iterations to convergence; (iv) wall-clock time; and (v) peak resident memory.
 
 \textbf{Environment.} All measurements reported here were taken on a single
-4-vCPU containerized Linux environment (Ubuntu~22.04, x86-64, CPython~3.10,
-3.8~GiB RAM). To quantify run-to-run variation, every (framework, size)
-configuration was executed \emph{three times} and we report the mean and sample
-standard deviation; the lone exception is the genuine \texttt{mrjob} MapReduce
-engine at $N=10^4$, run once because of its high per-iteration cost. The harness
+8-vCPU Linux virtual machine (OrbStack, x86-64, CPython~3.10, 7.8~GiB RAM) with
+Apache Spark~4.1.1 running on Java~17. To quantify run-to-run variation, every
+(framework, size) configuration was executed \emph{three times} and we report the
+mean and sample standard deviation. The PySpark RDD engine, whose per-iteration
+checkpoint makes it prohibitively slow (Section~\ref{sec:results}), was measured
+once at $N=10^3$. The harness
 (\texttt{tools/benchmark.py}) is configuration-driven (\texttt{tools/config.py}):
 it auto-skips any framework whose runtime is absent, so the \emph{same} command
 produces single-node numbers on a laptop and cluster-scale numbers on a big-data
@@ -213,10 +213,11 @@ lint the code on every commit. Figures are regenerated from the benchmark CSV by
 Table~\ref{tab:accuracy} reports the maximum per-node absolute error. The
 reference engine matches \texttt{networkx.pagerank} to order $10^{-12}$ across
 the standard, weighted, personalized, and dangling cases, confirming a faithful
-implementation of Eq.~\eqref{eq:pr}. The distributed implementations that we
-could execute agree with the reference engine to $\sim\!10^{-9}$--$10^{-8}$,
-which is precisely the floor imposed by storing ranks with eight decimal digits;
-the agreement is therefore exact up to output precision. On the dangling graph
+implementation of Eq.~\eqref{eq:pr}. The \texttt{mrjob} and Hadoop Streaming
+implementations agree with the reference engine to $\sim\!10^{-9}$--$10^{-8}$, the
+floor imposed by storing ranks with eight decimal digits, while PySpark's
+full-precision output matches it to machine epsilon ($\sim\!10^{-18}$); the
+agreement is therefore exact up to output precision. On the dangling graph
 the Python family preserves $\sum_u PR(u)=1.0$, whereas the single-pass
 JVM/Streaming family deliberately drops dangling mass, as designed.
 
@@ -237,6 +238,7 @@ Core vs.\ NetworkX --- $10^3$-node graph   & $2.5\times10^{-12}$ \\
 Core vs.\ NetworkX --- dangling graph      & $3.5\times10^{-13}$ \\
 mrjob (core / MapReduce) vs.\ Core         & $5.0\times10^{-9}$  \\
 Hadoop Streaming vs.\ Core                 & $2.4\times10^{-8}$  \\
+PySpark (DataFrame) vs.\ Core              & $2.6\times10^{-18}$ \\
 \bottomrule
 \end{tabular}
 \end{table}
@@ -264,41 +266,46 @@ lower is better). Differences sit at the eight-decimal output-precision floor.}
 
 \subsection{Single-node performance and scaling}
 Table~\ref{tab:perf} and Figures~\ref{fig:runtime}--\ref{fig:memory} report
-wall-clock time and peak memory for the four frameworks that run on a single node
-without a cluster: the pure-Python engine, the \texttt{mrjob} local (core)
-engine, the genuine single-pass \texttt{mrjob} MapReduce job, and the Hadoop
-Streaming local pipeline. The two in-memory engines are fastest at every size and
-scale near-linearly in $|E|$; the \texttt{mrjob} local engine's overhead is a
-constant of its runner that is amortized as the graph grows---from $1.7\times$ at
-$N=10^3$ to $\approx\!1.0\times$ at $N=5\times10^4$, where its $5.32$\,s is within
-$2\%$ of the engine's $5.24$\,s. Hadoop Streaming is $8\times$--$14\times$ slower
-because it spawns operating-system processes and re-serializes the entire state
-through the \texttt{map$\,|\,$sort$\,|\,$reduce} pipeline on every iteration. The
-genuine \texttt{mrjob} MapReduce job is slower still, $44\times$--$49\times$,
-because it launches a fresh MapReduce job for each of the 30 iterations; this
-isolates pure \emph{orchestration} overhead from the $O(|E|)$ computation, which
-is identical to the engine's. Conversely, Streaming's peak memory is the lowest
-($9$--$14$\,MB), since it streams records rather than holding the graph in a
-single address space, whereas the in-memory engines grow with the graph (up to
-$82$--$93$\,MB at $N=5\times10^4$)---a concrete illustration of the classic
-time--memory trade-off between in-memory and streaming execution.
+wall-clock time and peak memory for the five frameworks that run on a single node:
+the pure-Python engine, the \texttt{mrjob} local (core) engine, the genuine
+single-pass \texttt{mrjob} MapReduce job, the Hadoop Streaming pipeline, and
+PySpark's DataFrame engine. The two in-memory engines are fastest at every size
+and scale near-linearly in $|E|$; the \texttt{mrjob} local engine adds only a
+small $1.0\times$--$1.8\times$ constant from its runner. Hadoop Streaming is
+$6\times$--$13\times$ slower because it spawns operating-system processes and
+re-serializes the entire state through the \texttt{map$\,|\,$sort$\,|\,$reduce}
+pipeline every iteration; the genuine \texttt{mrjob} MapReduce job is
+$36\times$--$82\times$ slower still, dominated by launching a fresh job for each
+of the 30 iterations rather than by the $O(|E|)$ computation, which is identical
+to the engine's. PySpark's DataFrame engine is the slowest by far,
+$190\times$--$1000\times$, and its RDD counterpart---measured separately at
+$N=10^3$---is slower again at $1.78\times10^3$\,s ($\approx\!59$\,s/iteration),
+because each iteration's \texttt{localCheckpoint} materializes the rank vector to
+disk to truncate the query lineage (Section~\ref{sec:discussion}). Memory tells
+the complementary story (Fig.~\ref{fig:memory}): Hadoop Streaming uses the least
+($\sim\!10$\,MB) by streaming records, the Python engines grow modestly with the
+graph ($14$--$52$\,MB), while PySpark carries a near-constant $\sim\!1.6$\,GB JVM
+footprint regardless of graph size---two orders of magnitude more than any other
+engine at these scales.
 
 \begin{table*}[t]
 \centering
 \caption{Single-node performance, 30 iterations, Barab\'asi--Albert graphs,
-measured in a 4-vCPU Linux container. Each cell is \emph{mean wall-clock time
-(s)\,$\pm$\,std\,/\,peak memory (MB)} over three runs. The \texttt{mrjob}
-MapReduce engine at $N{=}10^4$ was run once owing to its cost; ``---'' marks a
-configuration not run on a single node.}
+measured on an 8-vCPU Linux VM (Apache Spark~4.1.1, Java~17). Each cell is
+\emph{mean wall-clock time (s)\,$\pm$\,std\,/\,peak memory (MB)} over three runs.
+PySpark's RDD engine is omitted from the table: measured once at $N{=}10^3$ it
+took $1.78\times10^3$\,s ($\approx\!59$\,s/iteration), its per-iteration
+checkpoint making it impractical at this scale.}
 \label{tab:perf}
-\begin{tabular}{@{}lcccc@{}}
+\begin{tabular}{@{}lccc@{}}
 \toprule
-Framework & $N{=}10^3$ & $N{=}5\!\times\!10^3$ & $N{=}10^4$ & $N{=}5\!\times\!10^4$ \\
+Framework & $N{=}10^3$ & $N{=}5\!\times\!10^3$ & $N{=}10^4$ \\
 \midrule
-Core (Python)      & 0.10\,$\pm$\,0.01 / 13.4 & 0.30\,$\pm$\,0.01 / 18.4 & 0.65\,$\pm$\,0.02 / 24.6 & 5.24\,$\pm$\,0.07 / 82.2 \\
-mrjob (core)       & 0.17\,$\pm$\,0.01 / 24.2 & 0.44\,$\pm$\,0.12 / 29.3 & 0.71\,$\pm$\,0.02 / 35.4 & 5.32\,$\pm$\,0.02 / 92.7 \\
-mrjob (MapReduce)  & 4.89\,$\pm$\,0.02 / 29.7 & 13.26\,$\pm$\,0.39 / 39.9 & 28.32 / 52.0 & --- \\
-Hadoop Streaming   & 1.36\,$\pm$\,0.01 / \phantom{0}9.5 & 2.98\,$\pm$\,0.03 / 11.7 & 4.98\,$\pm$\,0.01 / 13.8 & --- \\
+Core (Python)      & 0.09\,$\pm$\,0.01 / 13.6 & 0.43\,$\pm$\,0.16 / 18.6 & 0.78\,$\pm$\,0.21 / 24.9 \\
+mrjob (core)       & 0.16\,$\pm$\,0.03 / 24.5 & 0.52\,$\pm$\,0.03 / 29.4 & 0.72\,$\pm$\,0.05 / 35.8 \\
+mrjob (MapReduce)  & 7.13\,$\pm$\,0.36 / 30.1 & 21.35\,$\pm$\,2.35 / 40.0 & 27.86\,$\pm$\,3.08 / 52.4 \\
+Hadoop Streaming   & 1.11\,$\pm$\,0.03 / \phantom{0}9.8 & 3.26\,$\pm$\,0.19 / 11.9 & 4.61\,$\pm$\,0.04 / 14.0 \\
+PySpark DataFrame  & 87.9\,$\pm$\,4.7 / 1666 & 110.4\,$\pm$\,6.6 / 1629 & 150.7\,$\pm$\,23.4 / 1666 \\
 \bottomrule
 \end{tabular}
 \end{table*}
@@ -308,8 +315,8 @@ Hadoop Streaming   & 1.36\,$\pm$\,0.01 / \phantom{0}9.5 & 2.98\,$\pm$\,0.03 / 11
 \includegraphics[width=\columnwidth]{figures/runtime_scaling.pdf}
 \caption{Wall-clock time vs.\ graph size (log--log, mean of three runs with
 standard-deviation error bars). The in-memory engines scale near-linearly in
-$|E|$; the single-pass Streaming and \texttt{mrjob} MapReduce pipelines carry
-large per-iteration constants.}
+$|E|$; the single-pass Streaming, \texttt{mrjob} MapReduce, and PySpark DataFrame
+engines carry large per-iteration constants (PySpark's curve sits highest).}
 \label{fig:runtime}
 \end{figure}
 
@@ -324,13 +331,14 @@ slower execution; the framework overheads dominate at these single-node sizes.}
 \begin{figure}[t]
 \centering
 \includegraphics[width=\columnwidth]{figures/memory_scaling.pdf}
-\caption{Peak resident memory vs.\ graph size. The streaming pipeline trades
-runtime for the smallest memory footprint.}
+\caption{Peak resident memory vs.\ graph size. Hadoop Streaming uses the least
+memory; PySpark's $\sim\!1.6$\,GB JVM footprint is two orders of magnitude larger
+than the Python engines at these scales.}
 \label{fig:memory}
 \end{figure}
 
 These single-node results quantify framework \emph{overhead}: at these sizes (up
-to $5\times10^4$ nodes) the graph fits comfortably in memory, so the distributed
+to $10^4$ nodes) the graph fits comfortably in memory, so the distributed
 machinery only adds cost.
 The regime in which Spark and Hadoop repay their overhead---graphs whose edge
 sets exceed single-node memory---lies beyond what a single container can
@@ -346,12 +354,15 @@ are constants. The pure-Python engine pays only interpreter overhead. The
 its overhead is a small constant that is amortized to near zero at scale; the
 genuine \texttt{mrjob} MapReduce path instead launches a fresh job for each of
 the 30 iterations, and these process launches---not the per-edge work---dominate
-its $44\times$--$49\times$ slowdown. Hadoop Streaming similarly pays
+its $36\times$--$82\times$ slowdown. Hadoop Streaming similarly pays
 process-creation and full-state re-serialization each iteration, which explains
 its order-of-magnitude slowdown and its super-linear-looking growth at small
-sizes. In-memory Spark is designed to
-eliminate exactly this per-iteration I/O, but only once the data is large enough
-that the fixed cost of standing up executors is amortized.
+sizes. PySpark pays the JVM start-up, query planning, and per-iteration
+checkpoint costs up front: at these sizes its fixed overheads---a $\sim\!1.6$\,GB
+heap and tens of seconds of orchestration---dwarf the computation, and amortize
+only once the data is large enough to demand a cluster. In-memory Spark is
+designed to eliminate per-iteration I/O, but exactly that regime lies beyond a
+single node.
 
 \textbf{Iterative lineage must be truncated.} A subtle but critical finding
 concerns Spark's lazy evaluation: chaining a self-join per iteration grows the
@@ -360,7 +371,10 @@ its heap while merely \emph{rendering} the plan. Caching is insufficient because
 it does not cut lineage. We resolved this by checkpointing each iteration's rank
 vector (\texttt{localCheckpoint}), which materializes the result and truncates
 the plan. This is a general lesson for any iterative algorithm expressed in
-Spark, not specific to PageRank.
+Spark, not specific to PageRank. On a single node the checkpoint is also the
+\emph{dominant} cost, and it is far heavier for the RDD API than the DataFrame
+API---$\approx\!59$\,s versus $\approx\!3$\,s per iteration here---which is why
+RDD PageRank is impractical at this scale despite being algorithmically identical.
 
 \textbf{Engineering pitfalls across frameworks.} Porting one algorithm to many
 runtimes surfaced several environment-specific defects that never manifest in the
@@ -388,9 +402,10 @@ Hadoop stack is already the operational standard.
 \section{Limitations and Future Work}
 \label{sec:limits}
 Our performance comparison is single-node and therefore measures framework
-overhead rather than distributed scalability; the PySpark, Java, and Pig engines
-are validated for correctness but their cluster-scale behaviour is not yet
-measured here. The benchmark harness already supports these runtimes, so the
+overhead rather than distributed scalability: PySpark is timed here on one node
+(where its overhead is largest), while the Java MapReduce and Apache Pig engines
+are validated for correctness but not yet timed, and no engine is yet measured at
+cluster scale. The benchmark harness already supports these runtimes, so the
 natural next step is a multi-node study on graphs with $10^6$--$10^7$ edges
 (e.g.\ SNAP datasets~\cite{leskovec2014}), reporting strong- and weak-scaling for
 Spark. Further work includes redistributing dangling mass in the single-pass

@@ -1,0 +1,4 @@
+df n=1000 time=84s exit=0
+df n=5000 time=111s exit=0
+df n=10000 time=130s exit=0
+rdd n=1000 time=1783s exit=0

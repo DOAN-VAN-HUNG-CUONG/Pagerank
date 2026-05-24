@@ -1,0 +1,68 @@
+\relax 
+\citation{brin1998,page1999}
+\citation{dean2008}
+\citation{olston2008}
+\citation{zaharia2012}
+\citation{armbrust2015}
+\citation{hagberg2008}
+\citation{brin1998,page1999}
+\citation{dean2008}
+\citation{lin2010}
+\citation{olston2008}
+\citation{zaharia2012}
+\citation{armbrust2015}
+\citation{malewicz2010}
+\citation{gonzalez2014}
+\@writefile{toc}{\contentsline {section}{\numberline {I}Introduction}{1}{}\protected@file@percent }
+\@writefile{toc}{\contentsline {section}{\numberline {II}Background and Related Work}{1}{}\protected@file@percent }
+\newlabel{sec:background}{{II}{1}}
+\citation{barabasi1999}
+\@writefile{toc}{\contentsline {section}{\numberline {III}PageRank Formulation}{2}{}\protected@file@percent }
+\newlabel{sec:formulation}{{III}{2}}
+\newlabel{eq:pr}{{1}{2}}
+\@writefile{toc}{\contentsline {section}{\numberline {IV}Implementations}{2}{}\protected@file@percent }
+\newlabel{sec:impl}{{IV}{2}}
+\@writefile{toc}{\contentsline {section}{\numberline {V}Experimental Methodology}{2}{}\protected@file@percent }
+\newlabel{sec:method}{{V}{2}}
+\@writefile{lot}{\contentsline {table}{\numberline {I}{\ignorespaces Implementations under study. All compute the same algorithm (Eq.\nobreakspace  {}\textup  {\hbox {\mathsurround \z@ \normalfont  (\ignorespaces 1\hbox {}\unskip \@@italiccorr )}}); they differ in abstraction level, dependency footprint, dangling-mass handling, and target runtime.}}{3}{}\protected@file@percent }
+\newlabel{tab:impl}{{I}{3}}
+\@writefile{lot}{\contentsline {table}{\numberline {II}{\ignorespaces Maximum per-node absolute error (measured). The reference engine is exact against NetworkX; the executable distributed engines agree with it up to the eight-decimal output precision.}}{3}{}\protected@file@percent }
+\newlabel{tab:accuracy}{{II}{3}}
+\@writefile{toc}{\contentsline {section}{\numberline {VI}Results}{3}{}\protected@file@percent }
+\newlabel{sec:results}{{VI}{3}}
+\@writefile{toc}{\contentsline {subsection}{\numberline {\mbox  {VI-A}}Numerical correctness}{3}{}\protected@file@percent }
+\@writefile{toc}{\contentsline {subsection}{\numberline {\mbox  {VI-B}}Single-node performance and scaling}{3}{}\protected@file@percent }
+\@writefile{lof}{\contentsline {figure}{\numberline {1}{\ignorespaces $L_1$ delta per iteration for the reference engine. The error decreases monotonically and crosses $\varepsilon =10^{-3}$ at iteration 13.}}{3}{}\protected@file@percent }
+\newlabel{fig:convergence}{{1}{3}}
+\@writefile{lot}{\contentsline {table}{\numberline {III}{\ignorespaces Single-node performance, 30 iterations, Barab\'asi--Albert graphs, measured in a 4-vCPU Linux container. Each cell is \emph  {mean wall-clock time (s)\,$\pm $\,std\,/\,peak memory (MB)} over three runs. The \texttt  {mrjob} MapReduce engine at $N{=}10^4$ was run once owing to its cost; ``---'' marks a configuration not run on a single node.}}{4}{}\protected@file@percent }
+\newlabel{tab:perf}{{III}{4}}
+\@writefile{lof}{\contentsline {figure}{\numberline {2}{\ignorespaces Maximum per-node disagreement with the reference engine (log scale, lower is better). Differences sit at the eight-decimal output-precision floor.}}{4}{}\protected@file@percent }
+\newlabel{fig:accuracy}{{2}{4}}
+\@writefile{toc}{\contentsline {section}{\numberline {VII}Discussion}{4}{}\protected@file@percent }
+\newlabel{sec:discussion}{{VII}{4}}
+\@writefile{lof}{\contentsline {figure}{\numberline {3}{\ignorespaces Wall-clock time vs.\ graph size (log--log, mean of three runs with standard-deviation error bars). The in-memory engines scale near-linearly in $|E|$; the single-pass Streaming and \texttt  {mrjob} MapReduce pipelines carry large per-iteration constants.}}{4}{}\protected@file@percent }
+\newlabel{fig:runtime}{{3}{4}}
+\citation{leskovec2014}
+\citation{gonzalez2014}
+\bibcite{brin1998}{1}
+\bibcite{page1999}{2}
+\bibcite{dean2008}{3}
+\bibcite{zaharia2012}{4}
+\bibcite{armbrust2015}{5}
+\bibcite{olston2008}{6}
+\bibcite{malewicz2010}{7}
+\bibcite{gonzalez2014}{8}
+\bibcite{barabasi1999}{9}
+\bibcite{hagberg2008}{10}
+\bibcite{leskovec2014}{11}
+\bibcite{lin2010}{12}
+\@writefile{lof}{\contentsline {figure}{\numberline {4}{\ignorespaces Speedup relative to the pure-Python baseline. Values below\nobreakspace  {}1 indicate slower execution; the framework overheads dominate at these single-node sizes.}}{5}{}\protected@file@percent }
+\newlabel{fig:speedup}{{4}{5}}
+\@writefile{lof}{\contentsline {figure}{\numberline {5}{\ignorespaces Peak resident memory vs.\ graph size. The streaming pipeline trades runtime for the smallest memory footprint.}}{5}{}\protected@file@percent }
+\newlabel{fig:memory}{{5}{5}}
+\@writefile{toc}{\contentsline {section}{\numberline {VIII}Limitations and Future Work}{5}{}\protected@file@percent }
+\newlabel{sec:limits}{{VIII}{5}}
+\@writefile{toc}{\contentsline {section}{\numberline {IX}Conclusion}{5}{}\protected@file@percent }
+\newlabel{sec:conclusion}{{IX}{5}}
+\@writefile{toc}{\contentsline {section}{References}{5}{}\protected@file@percent }
+\gdef \@abspage@last{6}

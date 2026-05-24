@@ -47,10 +47,26 @@ OUTPUT="${OUTPUT:-output/benchmark_results.csv}"
 FIGDIR="${FIGDIR:-docs/figures}"
 PYTHON="${PYTHON:-python3}"
 
+# Spark on Java 17+ needs these module opens or its RDD/DataFrame jobs crash with
+# IllegalAccessError. JAVA_TOOL_OPTIONS is inherited by every JVM Spark launches
+# (driver + local executor). The flags are valid on Java 11 and skipped on Java 8.
+JAVA_MAJOR="$(java -version 2>&1 | head -1 | grep -oE '[0-9]+' | head -1 || echo 0)"
+# Set the opens when Java is 11+ OR unknown (e.g. `java` not on PATH but Spark
+# uses a bundled JDK 17). Only skip on a clearly-detected Java 8/9/10.
+if [ "${JAVA_MAJOR:-0}" -ge 11 ] 2>/dev/null || [ "${JAVA_MAJOR:-0}" -eq 0 ] 2>/dev/null; then
+    export JAVA_TOOL_OPTIONS="${JAVA_TOOL_OPTIONS:-} \
+--add-opens=java.base/sun.nio.ch=ALL-UNNAMED \
+--add-opens=java.base/java.nio=ALL-UNNAMED \
+--add-opens=java.base/java.lang=ALL-UNNAMED \
+--add-opens=java.base/java.util=ALL-UNNAMED \
+--add-opens=java.base/java.lang.invoke=ALL-UNNAMED"
+fi
+
 echo "=============================================================="
 echo " Environment (record this for the paper's Methodology section)"
 echo "=============================================================="
 uname -srm || true
+echo "Java major: ${JAVA_MAJOR}  (JAVA_TOOL_OPTIONS set: $([ -n "${JAVA_TOOL_OPTIONS:-}" ] && echo yes || echo no))"
 "$PYTHON" --version
 echo "CPUs: $(nproc 2>/dev/null || echo '?')"
 (free -h 2>/dev/null | awk 'NR<=2{print}') || true
