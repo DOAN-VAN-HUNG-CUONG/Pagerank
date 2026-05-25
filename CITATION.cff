@@ -7,7 +7,7 @@ authors:
     given-names: "Van Hung Cuong"
     email: "cuongdvh25msa13245@fpt.edu.vn"
     affiliation: "FPT University"
-    # orcid: "https://orcid.org/0000-0000-0000-0000"  # điền sau khi tạo ORCID iD
+    orcid: "https://orcid.org/0009-0009-4157-8814"
 repository-code: "https://github.com/DOAN-VAN-HUNG-CUONG/Pagerank"
 license: MIT
 keywords:
@@ -27,5 +27,6 @@ preferred-citation:
       given-names: "Van Hung Cuong"
       email: "cuongdvh25msa13245@fpt.edu.vn"
       affiliation: "FPT University"
+      orcid: "https://orcid.org/0009-0009-4157-8814"
   year: 2026
   # doi: "10.5281/zenodo.XXXXXXX"   # điền sau khi xuất bản trên Zenodo
