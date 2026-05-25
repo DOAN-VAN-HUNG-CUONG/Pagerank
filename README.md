@@ -2,6 +2,8 @@
 
 **Python · PySpark · Hadoop Streaming · Java MapReduce · Apache Pig**
 
+[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.20383459.svg)](https://doi.org/10.5281/zenodo.20383459)
+
 ---
 
 ## 1. Overview
